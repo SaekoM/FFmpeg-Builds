@@ -18,6 +18,21 @@ on:
         default: false
         required: false
 
+# Upstream carries no permissions block and relies on the GITHUB_TOKEN defaults. That worked when the
+# default was read/write, but GitHub now defaults repositories to read-only, so a fork's first push to
+# ghcr.io fails with "denied: installation not allowed to Create organization package" — the image builds
+# and then cannot be stored.
+#
+#   packages: write  — the four ghcr pushes (base, target bases, target variants, the ffmpeg build)
+#   contents: write  — publish_release runs `hub release create/delete`, prunes old releases and
+#                      updates the wiki; plain `read` would only cover the checkouts
+#
+# Declared once at workflow level rather than per job: every job needs at least checkout, and four of the
+# six push packages, so the per-job version would repeat this almost everywhere it appears.
+permissions:
+  contents: write
+  packages: write
+
 env:
   DOCKER_BUILDKIT: 1
   HAVE_CLEANUP_PAT: ${{ secrets.CLEANUP_PAT != '' }}
