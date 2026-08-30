@@ -1,38 +1,40 @@
 #!/bin/bash
 
-SCRIPT_REPO="https://git.savannah.gnu.org/git/libiconv.git"
-SCRIPT_COMMIT="5e517e5bf0e1b4575ad431e81d7a4750fa2b284e"
-
-# gnulib is cloned HERE, at download time, rather than being fetched by autopull.sh during the build.
+# A RELEASE TARBALL, deliberately not the git tree.
 #
-# The old build ran `retry-tool ./autopull.sh --one-time`, which reaches out to savannah in the middle
-# of the build stage — a network call to a moving repository, three years after this fork was frozen.
-# Upstream BtbN hit the same wall and made exactly this change, so the commit pair below is theirs and
-# is known to build together. Bump the two TOGETHER if ever: autogen.sh is sensitive to which gnulib it
-# is handed, and a mismatched pair fails in a much less obvious way than a missing one.
+# The git tree's ./autogen.sh regenerates the build system, and libiconv's Makefile.devel demands one
+# exact automake — it calls `aclocal-1.18`. This image is Ubuntu 23.04, which ships automake 1.16.5, so
+# that path dies with "aclocal-1.18: not found" regardless of which commit is pinned. A GNU release
+# tarball ships a pre-generated `configure`, so nothing here needs autoconf, automake or gnulib at all.
+# That also removes the old build-time `autopull.sh` fetch of gnulib — a network call in the middle of a
+# build stage — as a second, independent way for this to break later.
 #
-# The GitHub mirror is used for gnulib (as upstream does) because savannah is slow and prone to timing
-# out on a full clone; libiconv itself stays on savannah over https, which is what this fork already had.
-SCRIPT_REPO2="https://github.com/coreutils/gnulib.git"
-SCRIPT_COMMIT2="09b1597470c456aeac7e7d19b214821d4526934d"
+# Upstream BtbN solves the same failure differently (pinned libiconv + pinned gnulib, built on a much
+# newer base image whose autotools are new enough). That fix does not port here: this fork is held on
+# 23.04 on purpose, so the toolchain that produced the currently shipping DLLs stays unchanged while the
+# codec set is the only thing that moves. See variants/lgpl-godot.sh for why that matters.
+#
+# 1.17 rather than the newest release: it predates the automake-1.18 requirement entirely, it is the
+# version distributions shipped for years, and libiconv is a leaf dependency where being current buys
+# nothing.
+SCRIPT_VERSION="1.17"
+SCRIPT_TARBALL="https://ftp.gnu.org/pub/gnu/libiconv/libiconv-${SCRIPT_VERSION}.tar.gz"
+# sha256 as published on ftp.gnu.org. Pinned so a swapped mirror or a truncated download fails right
+# here, loudly, instead of somewhere confusing further into the build.
+SCRIPT_SHA256="8f74213b56238c85a50a5329f77e06198771e70dd9a739779f4c02f65d971313"
 
 ffbuild_enabled() {
     return 0
 }
 
-# NOTE: written against THIS fork's older harness — `to_df "RUN …"`, and a source tree at
-# $FFBUILD_DLDIR/$SELF. Upstream's current copy of this file uses a newer one (bare `echo`, no `cd`,
-# a $FFBUILD_DESTDIR that does not exist here), so it cannot be dropped in verbatim; only the gnulib
-# change above was ported across.
+# Download, verify and unpack are all inside the retried command on purpose: a truncated download fails
+# the checksum, and the retry then fetches it again rather than leaving a corrupt tree for the build.
 ffbuild_dockerdl() {
-    to_df "RUN retry-tool sh -c \"rm -rf $SELF && git clone '$SCRIPT_REPO' $SELF\" && git -C $SELF checkout \"$SCRIPT_COMMIT\""
-    to_df "RUN cd $SELF && retry-tool sh -c \"rm -rf gnulib && git clone --filter=blob:none '$SCRIPT_REPO2' gnulib\" && git -C gnulib checkout \"$SCRIPT_COMMIT2\" && rm -rf gnulib/.git"
+    to_df "RUN retry-tool sh -c \"rm -rf $SELF iconv.tar.gz && curl -fsSL '$SCRIPT_TARBALL' -o iconv.tar.gz && echo '$SCRIPT_SHA256  iconv.tar.gz' | sha256sum -c - && mkdir -p $SELF && tar xzf iconv.tar.gz -C $SELF --strip-components=1\" && rm -f iconv.tar.gz"
 }
 
 ffbuild_dockerbuild() {
     cd "$FFBUILD_DLDIR/$SELF"
-
-    (unset CC CFLAGS GMAKE && ./autogen.sh)
 
     local myconf=(
         --prefix="$FFBUILD_PREFIX"
