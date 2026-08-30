@@ -3,6 +3,23 @@ FROM ubuntu:23.04
 ENV FFBUILD_DLDIR="/opt/ffdl"
 
 ENV DEBIAN_FRONTEND noninteractive
+
+# 23.04 is past end of life, so its packages have moved off the default archive hosts and the apt-get
+# update below 404s on a stock image. Point apt at old-releases before anything tries to use it.
+#
+# Pinned to this release rather than bumped to a supported one on purpose: a bump changes the whole
+# toolchain — and, for the Linux target, the glibc floor the shipped .so ends up demanding — which would
+# land a toolchain change and a codec change in the same build. Change one thing at a time.
+#
+# Handles both apt layouts (23.04 uses sources.list; deb822 .sources arrived in 24.04) so this survives
+# a later base bump, and never fails the build if neither is present.
+RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources; do \
+        [ -f "$f" ] && sed -i \
+            -e 's|archive.ubuntu.com|old-releases.ubuntu.com|g' \
+            -e 's|security.ubuntu.com|old-releases.ubuntu.com|g' \
+            -e 's|ports.ubuntu.com|old-releases.ubuntu.com|g' "$f"; \
+    done; true
+
 RUN \
     mkdir -p "$FFBUILD_DLDIR" && \
     apt-get -y update && \
