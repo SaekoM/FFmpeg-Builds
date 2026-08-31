@@ -7,8 +7,19 @@ SCRIPT_REPO2="https://github.com/FFmpeg/nv-codec-headers.git"
 SCRIPT_COMMIT2="dc3e4484dc83485734e503991fe5ed3bdf256fba"
 SCRIPT_BRANCH2="sdk/11.1"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# NVIDIA CUDA / NVDEC headers. The variant sets --disable-hwaccels, so no hardware decode path
+# is compiled and nothing can reach this. It is also what broke the FFmpeg compile: libavutil/
+# hwcontext_cuda.c is built whenever --enable-ffnvcodec is passed, and release/6.1 is a MAINTAINED
+# branch whose HEAD now calls cu->cuCtxGetCurrent() — a member absent from the 2023 nv-codec-headers
+# commit this fork pins. Bumping that pin would fix the compile in order to ship a code path the
+# variant cannot use.
+#
+# generate.sh skips the stage and build.sh emits ffbuild_unconfigure instead. Re-enable only
+# alongside the variant flag that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerdl() {

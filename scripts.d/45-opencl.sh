@@ -6,8 +6,16 @@ SCRIPT_COMMIT="e049b16b5f157e2f28e7b5c301e71e1ccb3fe288"
 SCRIPT_REPO2="https://github.com/KhronosGroup/OpenCL-ICD-Loader.git"
 SCRIPT_COMMIT2="229410f86a8c8c9e0f86f195409e5481a2bae067"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# OpenCL. Reached through filters and libavutil/hwcontext_opencl.c, and the variant sets
+# --disable-filters and --disable-hwaccels. It was compiling hwcontext_opencl.c alongside the CUDA
+# context that failed — same dead class, one step behind it in the same build.
+#
+# generate.sh skips the stage and build.sh emits ffbuild_unconfigure instead. Re-enable only
+# alongside the variant flag that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerdl() {
