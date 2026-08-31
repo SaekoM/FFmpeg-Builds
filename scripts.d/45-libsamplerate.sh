@@ -3,8 +3,16 @@
 SCRIPT_REPO="https://github.com/libsndfile/libsamplerate.git"
 SCRIPT_COMMIT="22bd06eb114850ebe31981eb794d150a95439fef"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# Sample-rate conversion for the rubberband/filter path. --disable-filters; this build's audio
+# resampling goes through swresample instead.
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerbuild() {

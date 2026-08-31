@@ -3,8 +3,15 @@
 SCRIPT_REPO="https://github.com/xiph/theora.git"
 SCRIPT_COMMIT="7180717276af1ebc7da15c83162d6c5d6203aabf"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# Theora. No theora decoder is enabled and encoders are disabled.
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerbuild() {

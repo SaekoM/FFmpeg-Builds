@@ -3,9 +3,15 @@
 SCRIPT_REPO="https://github.com/uavs3/uavs3d.git"
 SCRIPT_COMMIT="1fd04917cff50fac72ae23e45f82ca6fd9130bd8"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# AVS3 decoder. No avs3 decoder is enabled.
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    [[ $TARGET == win32 ]] && return -1
-    return 0
+    return 1
 }
 
 ffbuild_dockerdl() {

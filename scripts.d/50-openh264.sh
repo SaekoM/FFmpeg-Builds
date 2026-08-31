@@ -3,8 +3,15 @@
 SCRIPT_REPO="https://github.com/cisco/openh264.git"
 SCRIPT_COMMIT="986606644aca8f795fc04f76dcc758d88378e4a0"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# H.264 encoder. --disable-encoders, and H.264 decoding here is native.
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerbuild() {

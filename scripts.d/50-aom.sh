@@ -3,8 +3,17 @@
 SCRIPT_REPO="https://aomedia.googlesource.com/aom"
 SCRIPT_COMMIT="83ccc009eade321c8723ae0da8655fc68ce6a128"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# AV1 encoder plus the reference decoder. Encoders are disabled, and the AV1 decoder this build
+# deliberately registers is libdav1d — libaom's is far too slow for playback (see the AV1 note in
+# variants/lgpl-godot.sh). Also one of the slowest builds in the whole chain.
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerstage() {

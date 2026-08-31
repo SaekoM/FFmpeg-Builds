@@ -3,8 +3,15 @@
 SCRIPT_REPO="https://github.com/njh/twolame.git"
 SCRIPT_COMMIT="90b694b6125dbe23a346bd5607a7fb63ad2785dc"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# MP2 encoder. --disable-encoders.
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerbuild() {

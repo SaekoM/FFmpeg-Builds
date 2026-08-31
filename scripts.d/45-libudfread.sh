@@ -3,8 +3,15 @@
 SCRIPT_REPO="https://code.videolan.org/videolan/libudfread.git"
 SCRIPT_COMMIT="b3e6936a23f8af30a0be63d88f4695bdc0ea26e1"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# UDF reader, reached only through libbluray. No bluray demuxer is enabled.
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerbuild() {

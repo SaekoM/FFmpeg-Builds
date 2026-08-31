@@ -3,8 +3,15 @@
 SCRIPT_REPO="https://svn.code.sf.net/p/lame/svn/trunk/lame"
 SCRIPT_REV="6507"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# MP3 ENCODER. --disable-encoders, and MP3 decoding here is native (--enable-decoder=mp3).
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    return 0
+    return 1
 }
 
 ffbuild_dockerdl() {

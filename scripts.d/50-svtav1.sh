@@ -3,9 +3,15 @@
 SCRIPT_REPO="https://gitlab.com/AOMediaCodec/SVT-AV1.git"
 SCRIPT_COMMIT="08c18ba0768ed3dbbff0903adc326fb3a7549bd9"
 
+# DISABLED IN THIS FORK — nothing in this decode-only build can reach it.
+#
+# AV1 ENCODER only. --disable-encoders.
+#
+# generate.sh skips the stage entirely and build.sh emits ffbuild_unconfigure instead, so the
+# library is simply absent rather than half-present. Re-enable only alongside the variant flag
+# that would make it reachable.
 ffbuild_enabled() {
-    [[ $TARGET == win32 ]] && return -1
-    return 0
+    return 1
 }
 
 ffbuild_dockerdl() {
