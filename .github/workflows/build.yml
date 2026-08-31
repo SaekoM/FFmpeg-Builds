@@ -24,7 +24,7 @@ on:
 # and then cannot be stored.
 #
 #   packages: write  — the four ghcr pushes (base, target bases, target variants, the ffmpeg build)
-#   contents: write  — publish_release runs `hub release create/delete`, prunes old releases and
+#   contents: write  — publish_release runs `gh release create/delete`, prunes old releases and
 #                      updates the wiki; plain `read` would only cover the checkouts
 #
 # Declared once at workflow level rather than per job: every job needs at least checkout, and four of the
@@ -291,11 +291,15 @@ jobs:
           RELDATE="$(date +'%Y-%m-%d %H:%M')"
           NAME="Auto-Build $RELDATE"
           TAGNAME="autobuild-$(date +'%Y-%m-%d-%H-%M')"
-          hub release create $(for a in artifacts/*.{zip,tar.xz}; do echo -a $a; done) -m "$NAME" -t "master" "$TAGNAME"
+          # gh, not hub: hub is no longer installed on GitHub's runner images (it exits 127), while gh
+          # ships on every one of them. Flag mapping: hub's repeated -a becomes a plain file list, -m
+          # becomes --title, and -t becomes --target. gh also requires notes, so the title is reused.
+          gh release create "$TAGNAME" artifacts/*.{zip,tar.xz} --title "$NAME" --notes "$NAME" --target master
           echo "tag_name=${TAGNAME}" >> $GITHUB_OUTPUT
           echo "rel_date=${RELDATE}" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
       - name: Update Latest
         run: |
           set -xe
@@ -304,17 +308,22 @@ jobs:
           ./util/repack_latest.sh latest_artifacts artifacts/*.{zip,tar.xz}
           NAME="Latest Auto-Build (${{ steps.create_release.outputs.rel_date }})"
           TAGNAME="latest"
-          hub release delete "$TAGNAME" || true
+          gh release delete "$TAGNAME" --yes || true
           git push --delete origin "$TAGNAME" || true
           sleep 15
-          hub release create $(for a in latest_artifacts/*; do echo -a $a; done) -m "$NAME" -t "master" "$TAGNAME"
+          gh release create "$TAGNAME" latest_artifacts/* --title "$NAME" --notes "$NAME" --target master
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
       - name: Update Wiki
+        continue-on-error: true
         run: ./util/update_wiki.sh artifacts ${{ steps.create_release.outputs.tag_name }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
       - name: Prune old releases
+        continue-on-error: true
         run: ./util/prunetags.sh
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
