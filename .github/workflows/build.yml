@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install buildx
         uses: docker/setup-buildx-action@v2
         with:
@@ -140,7 +140,7 @@ jobs:
         target: [win64,linux64,linuxarm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install buildx
         uses: docker/setup-buildx-action@v2
         with:
@@ -194,7 +194,7 @@ jobs:
         variant: [lgpl-godot]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install buildx
         uses: docker/setup-buildx-action@v2
         with:
@@ -247,7 +247,7 @@ jobs:
         variant: [lgpl-godot]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Login to Docker
         uses: docker/login-action@v2
         with:
@@ -258,10 +258,13 @@ jobs:
         run: |
           T="$(echo -n ${{ github.token }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
           ./build.sh ${{ matrix.target }} ${{ matrix.variant }}
+      # v4, and the name must now be unique per matrix leg. v3 let both targets upload to a single
+      # "ffmpeg" artifact and merged them; v4 makes artifacts immutable and rejects the second write.
+      # publish_release reassembles them with merge-multiple below, so what lands on disk is unchanged.
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: ffmpeg
+          name: ffmpeg-${{ matrix.target }}-${{ matrix.variant }}
           path: artifacts/*
   publish_release:
     name: Publish release
@@ -270,11 +273,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+      # Collect every per-target artifact into ONE flat artifacts/ directory. merge-multiple keeps the
+      # files at the top level rather than nesting them under a folder per artifact, which is what the
+      # release and repack steps below expect (they glob artifacts/*.{zip,tar.xz}).
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: ffmpeg
+          pattern: ffmpeg-*
+          merge-multiple: true
           path: artifacts
       - name: Create release
         id: create_release
