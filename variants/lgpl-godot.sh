@@ -22,6 +22,17 @@ AV1="--enable-libdav1d --enable-decoder=libdav1d --enable-parser=av1"
 
 FF_CONFIGURE="$FF_CONFIGURE $VORBIS $VP9 $VP8 $H264 $OPUS $HEVC $AV1"
 
+# Windows hardware decoding: D3D11VA, with DXVA2 for older drivers. --disable-hwaccels above switches every
+# hardware decoder off, so the ones wanted are switched back on by name, the same way the software decoders are.
+# Both APIs come with the mingw toolchain's headers, so they need no dependency script. Windows only: Linux has
+# no D3D, and forcing --enable-d3d11va there would fail configure. (build.sh sets TARGET before sourcing this.)
+#
+# AV1 is left to dav1d on purpose: FFmpeg's AV1 hardware decoding runs through its native `av1` decoder, which this
+# build doesn't register (dav1d is the AV1 decoder here), and dav1d is fast enough on the processor.
+if [[ "$TARGET" == win* ]]; then
+    FF_CONFIGURE="$FF_CONFIGURE --enable-d3d11va --enable-dxva2 --enable-hwaccel=h264_d3d11va,h264_d3d11va2,h264_dxva2,hevc_d3d11va,hevc_d3d11va2,hevc_dxva2,vp9_d3d11va,vp9_d3d11va2,vp9_dxva2"
+fi
+
 # Hold FFmpeg at 6.1. defaults-lgpl.sh sets GIT_BRANCH=master, which now builds avcodec-62 — but the
 # EIRTeam.FFmpeg GDExtension links avcodec-60, so an unpinned build produces libraries it cannot load at
 # all. Staying on 6.1 keeps every SONAME (avcodec-60 / avformat-60 / avutil-58 / swscale-7 /
